@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mint-500: oklch(0.72 0.11 178);
+  --color-banana: oklch(0.95 0.05 100);
+}
+body {
+  color: var(--color-mint-500);
+}
