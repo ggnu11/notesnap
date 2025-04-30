@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileUploader } from "@/features/summary/ui/FileUploader";
 import { SummaryResult } from "@/features/summary/ui/SummaryResult";
 import { ErrorMessage } from "@/features/summary/ui/ErrorMessage";
+import { ResetButton } from "@/features/summary/ui/ResetButton";
 import { isTextFile } from "@/features/summary/lib/fileUtils";
 import { summarizeText } from "@/features/summary/lib/summaryAlgorithm";
 
@@ -41,6 +42,25 @@ const NoteSnap = () => {
     }
   };
 
+  /**
+   * 상태 초기화 함수
+   */
+  const handleReset = () => {
+    setSelectedFile(null);
+    setSummary(null);
+    setError(null);
+    setIsProcessing(false);
+
+    // 파일 입력란 초기화
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  // 초기화 버튼 표시 여부 (파일이 선택되었거나 요약/에러가 있을 때만 표시)
+  const showResetButton = !isProcessing && (selectedFile !== null || summary !== null || error !== null);
+
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-4">
       <h1 className="text-3xl font-bold text-teal-500">NoteSnap</h1>
@@ -61,6 +81,12 @@ const NoteSnap = () => {
 
       {error && <ErrorMessage message={error} />}
       {summary && <SummaryResult summary={summary} />}
+      
+      {showResetButton && (
+        <div className="mt-4 text-center">
+          <ResetButton onReset={handleReset} disabled={isProcessing} />
+        </div>
+      )}
     </div>
   );
 };
