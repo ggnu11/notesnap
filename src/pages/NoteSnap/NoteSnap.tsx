@@ -5,8 +5,8 @@ import { FileUploader } from "@/features/summary/ui/FileUploader";
 import { SummaryResult } from "@/features/summary/ui/SummaryResult";
 import { ErrorMessage } from "@/features/summary/ui/ErrorMessage";
 import { ResetButton } from "@/features/summary/ui/ResetButton";
-import { isTextFile } from "@/features/summary/lib/fileUtils";
-import { summarizeText } from "@/features/summary/lib/summaryAlgorithm";
+import { isTextFile, isImageFile, isPDFFile, fileToBase64 } from "@/features/summary/lib/fileUtils";
+import { summarizeFile } from "@/services/gemini";
 
 /**
  * NoteSnap 메인 컴포넌트
@@ -28,14 +28,31 @@ const NoteSnap = () => {
     setSummary(null);
 
     try {
-      if (isTextFile(file)) {
-        const text = await file.text();
-        setSummary(summarizeText(text));
-      } else {
-        setError("지원하지 않는 파일 형식입니다. 텍스트 파일만 요약할 수 있습니다.");
+      // 지원하는 파일 형식 확인
+      const isSupported = isTextFile(file) || isImageFile(file) || isPDFFile(file);
+
+      if (!isSupported) {
+        setError("지원하지 않는 파일 형식입니다. 텍스트, 이미지, PDF 파일만 요약할 수 있습니다.");
+        return;
       }
+
+      // 텍스트 파일은 직접 읽기, 나머지는 Base64로 인코딩
+      let fileContent: string;
+      if (isTextFile(file)) {
+        fileContent = await file.text();
+      } else {
+        fileContent = await fileToBase64(file);
+      }
+
+      // Gemini API로 요약
+      const summaryResult = await summarizeFile(fileContent, file.name, file.type);
+      setSummary(summaryResult);
     } catch (err) {
-      setError("파일 처리 중 오류가 발생했습니다.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("파일 처리 중 오류가 발생했습니다.");
+      }
       console.error("File processing error:", err);
     } finally {
       setIsProcessing(false);

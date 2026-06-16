@@ -8,9 +8,17 @@
     ],
     "rewrites": [
       {
+        "source": "/api/summarize",
+        "function": "summarize"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
   }
 }
