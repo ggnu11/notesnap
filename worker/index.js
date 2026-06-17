@@ -1,18 +1,17 @@
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 export default {
   async fetch(request, env) {
-    // CORS preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      });
+      return new Response(null, { headers: corsHeaders });
     }
 
     if (request.method !== "POST") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
     }
 
     try {
@@ -21,7 +20,7 @@ export default {
       if (!fileContent || !fileName || !fileType) {
         return Response.json(
           { error: "fileContent, fileName, fileType are required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -37,11 +36,11 @@ export default {
       );
 
       if (!geminiRes.ok) {
-        const err = await geminiRes.text();
-        console.error("Gemini API error:", err);
+        const errText = await geminiRes.text();
+        console.error("Gemini API error:", errText);
         return Response.json(
-          { error: "AI 요약 중 오류가 발생했습니다." },
-          { status: 502 }
+          { error: `Gemini API 오류 (${geminiRes.status}): ${errText}` },
+          { status: 502, headers: corsHeaders }
         );
       }
 
@@ -50,15 +49,12 @@ export default {
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
         "요약을 생성할 수 없습니다.";
 
-      return Response.json(
-        { summary },
-        { headers: { "Access-Control-Allow-Origin": "*" } }
-      );
+      return Response.json({ summary }, { headers: corsHeaders });
     } catch (error) {
       console.error("Worker error:", error);
       return Response.json(
-        { error: "서버 오류가 발생했습니다." },
-        { status: 500, headers: { "Access-Control-Allow-Origin": "*" } }
+        { error: `서버 오류: ${error.message}` },
+        { status: 500, headers: corsHeaders }
       );
     }
   },
@@ -106,7 +102,6 @@ function buildContents(fileContent, fileName, fileType) {
     ];
   }
 
-  // 텍스트 파일
   return [
     {
       parts: [
