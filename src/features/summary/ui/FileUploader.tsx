@@ -40,7 +40,14 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       onDragOver={handleDragOver}
     >
       {isProcessing ? (
-        <p className="text-yellow-600">처리 중...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex gap-1">
+            <span className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce [animation-delay:0ms]"></span>
+            <span className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce [animation-delay:150ms]"></span>
+            <span className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce [animation-delay:300ms]"></span>
+          </div>
+          <p className="text-teal-600 font-medium">요약하는 중</p>
+        </div>
       ) : (
         <>
           <svg

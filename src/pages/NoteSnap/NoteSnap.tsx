@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// 절대 경로를 사용하여 모듈 가져오기
 import { FileUploader } from "@/features/summary/ui/FileUploader";
 import { SummaryResult } from "@/features/summary/ui/SummaryResult";
 import { ErrorMessage } from "@/features/summary/ui/ErrorMessage";
@@ -8,19 +7,12 @@ import { ResetButton } from "@/features/summary/ui/ResetButton";
 import { isTextFile, isImageFile, isPDFFile, fileToBase64 } from "@/features/summary/lib/fileUtils";
 import { summarizeFile } from "@/services/gemini";
 
-/**
- * NoteSnap 메인 컴포넌트
- * 파일 업로드 및 텍스트 요약 기능을 제공
- */
 const NoteSnap = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * 파일 처리 함수
-   */
   const processFile = async (file: File) => {
     setSelectedFile(file);
     setIsProcessing(true);
@@ -28,7 +20,6 @@ const NoteSnap = () => {
     setSummary(null);
 
     try {
-      // 지원하는 파일 형식 확인
       const isSupported = isTextFile(file) || isImageFile(file) || isPDFFile(file);
 
       if (!isSupported) {
@@ -36,7 +27,6 @@ const NoteSnap = () => {
         return;
       }
 
-      // 텍스트 파일은 직접 읽기, 나머지는 Base64로 인코딩
       let fileContent: string;
       if (isTextFile(file)) {
         fileContent = await file.text();
@@ -44,7 +34,6 @@ const NoteSnap = () => {
         fileContent = await fileToBase64(file);
       }
 
-      // Gemini API로 요약
       const summaryResult = await summarizeFile(fileContent, file.name, file.type);
       setSummary(summaryResult);
     } catch (err) {
@@ -59,49 +48,42 @@ const NoteSnap = () => {
     }
   };
 
-  /**
-   * 상태 초기화 함수
-   */
   const handleReset = () => {
     setSelectedFile(null);
     setSummary(null);
     setError(null);
     setIsProcessing(false);
-
-    // 파일 입력란 초기화
-    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
   };
 
-  // 초기화 버튼 표시 여부 (파일이 선택되었거나 요약/에러가 있을 때만 표시)
-  const showResetButton = !isProcessing && (selectedFile !== null || summary !== null || error !== null);
+  // 요약 성공 시: 결과만 표시
+  if (summary) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full p-4">
+        <h1 className="text-3xl font-bold text-teal-500">NoteSnap</h1>
+        <SummaryResult summary={summary} fileName={selectedFile?.name} />
+        <div className="mt-4">
+          <ResetButton onReset={handleReset} />
+        </div>
+      </div>
+    );
+  }
 
+  // 기본: 파일 업로드 화면
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-4">
       <h1 className="text-3xl font-bold text-teal-500">NoteSnap</h1>
       <p className="mt-4 text-lg text-teal-600">파일을 업로드하여 내용을 요약해보세요</p>
 
-      <FileUploader 
-        onFileSelect={processFile} 
-        isProcessing={isProcessing} 
+      <FileUploader
+        onFileSelect={processFile}
+        isProcessing={isProcessing}
       />
 
-      {selectedFile && !isProcessing && (
-        <div className="mt-4 text-center">
-          <p className="text-green-600 font-medium">
-            <span className="font-bold">{selectedFile.name}</span> 파일이 선택되었습니다
-          </p>
-        </div>
-      )}
-
       {error && <ErrorMessage message={error} />}
-      {summary && <SummaryResult summary={summary} />}
-      
-      {showResetButton && (
-        <div className="mt-4 text-center">
-          <ResetButton onReset={handleReset} disabled={isProcessing} />
+
+      {error && (
+        <div className="mt-4">
+          <ResetButton onReset={handleReset} />
         </div>
       )}
     </div>
